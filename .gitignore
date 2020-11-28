@@ -1,3 +1,6 @@
+# pvm specific
+*.pvm
+
 # IDE specific
 .idea
 .vscode

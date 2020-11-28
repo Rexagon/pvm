@@ -744,9 +744,9 @@ def compile_asm(opcodes_storage: OpCodeTrie, text: str) -> bytes:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('input_file', type=str, help='Path to input file')
-    parser.add_argument('-o', '--output', help="Path to output file", required=True)
+    parser = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=30))
+    parser.add_argument('input_file', type=str, help='path to the input file')
+    parser.add_argument('-o', '--output', help="path to the output file", required=True)
     args = parser.parse_args()
 
     opcodes_storage = OpCodeTrie()

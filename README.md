@@ -1,6 +1,18 @@
 # PVM
 Strange stack VM prototype
 
+### Usage
+```
+usage: pasm.py [-h] -o OUTPUT input_file
+
+positional arguments:
+  input_file                  path to the input file
+
+optional arguments:
+  -h, --help                  show this help message and exit
+  -o OUTPUT, --output OUTPUT  path to the output file
+```
+
 ### Types
 
 Number:
