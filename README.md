@@ -2,7 +2,7 @@
 Strange stack VM prototype
 
 ### Types
-
+```
 num:
   | int -> 4 byte integer
   | short -> 2 byte integer
@@ -13,8 +13,11 @@ flags:
   | S - result is negative
   | V - overflow occurred
   | C - carry
+```
 
 ### Commands
+
+```
 t : I => int, S => short, _ => byte
 f : Z => flag Z, S => flag S, V => flag V, C => flag C
 num : integer_type(t)
@@ -69,3 +72,4 @@ num : integer_type(t)
 - GE, (..., num x, num y) -> (..., byte (x >= y))
 - EQ, (..., num x, num y) -> (..., byte (x == y))
 - NEQ, (..., num x, num y) -> (..., byte (x == y))
+```
