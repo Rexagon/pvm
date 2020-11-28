@@ -2,28 +2,37 @@
 Strange stack VM prototype
 
 ### Types
-```
-num:
-  | int -> 4 byte integer
-  | short -> 2 byte integer
-  | byte
 
-flags:
-  | Z - result is zero
-  | S - result is negative
-  | V - overflow occurred
-  | C - carry
-```
+Number:
+> Values are stored in big endian order
+- `int` -  4 byte integer, used when command has suffix `I`
+- `short` - 2 byte integer, used when command has suffix `S`
+- `byte`- used otherwise
+- `addr` - same as `int`
+
+
+Flags
+- `Z` - result is zero
+- `S` - result is negative
+- `V` - overflow occurred
+- `C` - carry
+
+> Flags are updated during math operations or can be cleared by command `CLRFLAGS`
 
 ### Commands
 
-```
-t : I => int, S => short, _ => byte
-f : Z => flag Z, S => flag S, V => flag V, C => flag C
-num : integer_type(t)
+> Notation:
+>
+> - `CMD(t)` means all possible variants: `CMD`, `CMDS`, `CMDI`
+> - `CMD(f)` means all possible variants: `CMDZ`, `CMDS`, `CMDV`, `CMDC`
+> - `CMD(?f)` means `CMD` or `CMD(f)`
+> - `CMD(?F)` means `CMD` or `CMDF`, where `F` is specific flag
+> - `num` is a sequence of integer bytes defined by `(t)` in big endian order
+> - `value` can be a label or a number (`0b110`, `0x123`, `42`)
 
-- NOP
-- HLT
+```
+- NOP, do nothing
+- HLT, stop execution
 
 - PUSH(t) value, (...) -> (..., num value)
 - POP(t), (..., num x) -> (...)
@@ -31,21 +40,21 @@ num : integer_type(t)
 - ROR(t), (..., num a, num b, num c) -> (..., num c, num a, num b)
 - ROL(t), (..., num a, num b, num c) -> (..., num b, num c, num a)
 
-- CALL, (..., addr x) -> (...), s15=x, PC=PC+x
+- CALL, (..., addr x) -> (...), R=x, PC=PC+x
 - JMP, (..., addr x) -> (...), PC=PC+x
-- RET, PC=s15
+- RET, PC=R
 - BRANCH(t), (..., num v, addr x) -> (...), (v > 0 ? NOP : JMP x)
 - BRANCHNOT(t), (..., num v, addr x) -> (...), (v == 0 ? NOP : JMP x)
-- FBRANCH(f), (..., addr x) -> (...), (flags(f) == 1 ? NOP : JMP x)
-- FBRANCHNOT(f), (..., addr x) -> (...), (flags(f) != 1 ? NOP : JMP x)
+- FBRANCH(f), (..., addr x) -> (...), ((flag f) == 1 ? NOP : JMP x)
+- FBRANCHNOT(f), (..., addr x) -> (...), ((flag f) != 1 ? NOP : JMP x)
 
 - DUP(t), (..., num a) -> (..., num a, num a)
 - PEEK(t) rel, (..., s0 - rel: value, ...) -> (..., s0 - rel: value, ..., value), 1 <= rel <= 16
 
 - CLRFLAGS, clear flags
-- ADD(C)(t), (..., num a, num b) -> (..., num sum), sum = (a + b + ?C)
-- ADD(C)L(t), (..., num a, num b) -> (..., num (high sum), num (low sum)), sum = (a + b + ?C)
-- SUB(C)(t), (..., num a, num b) -> (..., num (a - b - ?C))
+- ADD(?C)(t), (..., num a, num b) -> (..., num sum), sum = (a + b + ?C))
+- ADD(?C)L(t), (..., num a, num b) -> (..., num (high sum), num (low sum)), sum = (a + b + ?C)
+- SUB(?C)(t), (..., num a, num b) -> (..., num (a - b - ?C))
 - INC(t), (..., num x) -> (..., num (x + 1))
 - DEC(t), (..., num x) -> (..., num (x - 1))
 - MUL(t), (..., num x, num y) -> (..., num m), m = (x * y)

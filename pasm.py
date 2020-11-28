@@ -77,24 +77,6 @@ class CpuFlag(Enum):
 cpu_flags = (CpuFlag.ZERO, CpuFlag.SIGN, CpuFlag.OVERFLOW, CpuFlag.CARRY)
 
 
-# (less = 00, greater = 01, equal = 10)
-class Comparison(Enum):
-    def mask(self) -> int:
-        return int(self.value)
-
-    LT = 0b000  # <
-    GE = 0b111  # >=
-
-    GT = 0b010  # >
-    LE = 0b101  # <=
-
-    EQ = 0b100  # ==
-    NEQ = 0b011  # !=
-
-    # 001 -> used for lshift
-    # 110 -> used for rshift
-
-
 class CompilationContext:
     def __init__(self):
         self.code: bytearray = bytearray()
@@ -180,6 +162,7 @@ class OpCodeTrieNode(object):
 class OpCodeTrie(object):
     def __init__(self):
         self.root = OpCodeTrieNode('')
+        [cls.register(self) for cls in OpCode.__subclasses__()]
 
     def insert(self, word: str, factory: Callable[[str], OpCode]):
         node = self.root
@@ -672,15 +655,31 @@ class CmdShift(OpCode):
 
 # 111oooxx, o - operation, ooo not in [001, 110]
 class CmdCompare(OpCode):
+    class Comparison(Enum):
+        def mask(self) -> int:
+            return int(self.value)
+
+        LT = 0b000  # <
+        GE = 0b111  # >=
+
+        GT = 0b010  # >
+        LE = 0b101  # <=
+
+        EQ = 0b100  # ==
+        NEQ = 0b011  # !=
+
+        # 001 -> used for lshift
+        # 110 -> used for rshift
+
     @classmethod
     def register(cls, storage: OpCodeTrie):
         for ty in number_types:
-            storage.insert('lt' + ty.to_str(), lambda _, t=ty: CmdCompare(t, Comparison.LT))
-            storage.insert('le' + ty.to_str(), lambda _, t=ty: CmdCompare(t, Comparison.LE))
-            storage.insert('gt' + ty.to_str(), lambda _, t=ty: CmdCompare(t, Comparison.GT))
-            storage.insert('ge' + ty.to_str(), lambda _, t=ty: CmdCompare(t, Comparison.GE))
-            storage.insert('eq' + ty.to_str(), lambda _, t=ty: CmdCompare(t, Comparison.EQ))
-            storage.insert('neq' + ty.to_str(), lambda _, t=ty: CmdCompare(t, Comparison.NEQ))
+            storage.insert('lt' + ty.to_str(), lambda _, t=ty: CmdCompare(t, CmdCompare.Comparison.LT))
+            storage.insert('le' + ty.to_str(), lambda _, t=ty: CmdCompare(t, CmdCompare.Comparison.LE))
+            storage.insert('gt' + ty.to_str(), lambda _, t=ty: CmdCompare(t, CmdCompare.Comparison.GT))
+            storage.insert('ge' + ty.to_str(), lambda _, t=ty: CmdCompare(t, CmdCompare.Comparison.GE))
+            storage.insert('eq' + ty.to_str(), lambda _, t=ty: CmdCompare(t, CmdCompare.Comparison.EQ))
+            storage.insert('neq' + ty.to_str(), lambda _, t=ty: CmdCompare(t, CmdCompare.Comparison.NEQ))
 
     def __init__(self, ty: Number, cmp: Comparison):
         self.ty = ty
@@ -730,12 +729,6 @@ def read_file(path: str) -> str:
     return result
 
 
-def create_opcodes_storage() -> OpCodeTrie:
-    trie = OpCodeTrie()
-    [cls.register(trie) for cls in OpCode.__subclasses__()]
-    return trie
-
-
 def compile_asm(opcodes_storage: OpCodeTrie, text: str) -> bytes:
     opcodes = parse_asm(opcodes_storage, text)
 
@@ -750,19 +743,15 @@ def compile_asm(opcodes_storage: OpCodeTrie, text: str) -> bytes:
     return ctx.code
 
 
-def main():
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('input_file', type=str, help='Path to input file')
     parser.add_argument('-o', '--output', help="Path to output file", required=True)
     args = parser.parse_args()
 
-    opcodes_storage = create_opcodes_storage()
+    opcodes_storage = OpCodeTrie()
     text = read_file(args.input_file)
     code = compile_asm(opcodes_storage, text)
 
     with open(args.output, 'wb') as file:
         file.write(code)
-
-
-if __name__ == "__main__":
-    main()
