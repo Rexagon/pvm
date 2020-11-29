@@ -9,11 +9,24 @@ sum_loop:
   PUSHI end
   BRANCH
 
+  PUSH 0
+  PUSH 0
+  PUSH 0
+  RORI
+
+  ADDI
+  SWAPI
+
+  POP
+  POP
+  POP
+
   DEC
   PUSHI sum_loop
   JMP
 
 end:
+  POP
   HLT
 
 

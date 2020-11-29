@@ -387,7 +387,7 @@ class CmdSwap(OpCode):
         ctx.push(Number.BYTE, 0b00001100 | self.ty.mask())
 
 
-# 00010dxx, d - direction (0 - right, 1 - left)
+# 0001ldxx, l - long (4 items), d - direction (0 - right, 1 - left)
 class CmdRotate(OpCode):
     class Direction(Enum):
         def mask(self) -> int:
@@ -399,33 +399,59 @@ class CmdRotate(OpCode):
     @classmethod
     def register(cls, storage: OpCodeStorage):
         for ty in number_types:
-            storage.insert("ror" + ty.to_str(), lambda _, t=ty: CmdRotate(t, CmdRotate.Direction.RIGHT))
-            storage.insert("rol" + ty.to_str(), lambda _, t=ty: CmdRotate(t, CmdRotate.Direction.LEFT))
+            storage.insert("ror" + ty.to_str(), lambda _, t=ty: CmdRotate(t, CmdRotate.Direction.RIGHT, extended=False))
+            storage.insert("rol" + ty.to_str(), lambda _, t=ty: CmdRotate(t, CmdRotate.Direction.LEFT, extended=False))
+            storage.insert("eror" + ty.to_str(), lambda _, t=ty: CmdRotate(t, CmdRotate.Direction.RIGHT, extended=True))
+            storage.insert("erol" + ty.to_str(), lambda _, t=ty: CmdRotate(t, CmdRotate.Direction.LEFT, extended=True))
 
-            storage.lut[0b00010000 | ty.mask()] = lambda ctx, t=ty: CmdRotate.execute(ctx, t, CmdRotate.Direction.RIGHT)
-            storage.lut[0b00010100 | ty.mask()] = lambda ctx, t=ty: CmdRotate.execute(ctx, t, CmdRotate.Direction.LEFT)
+            storage.lut[0b00010000 | ty.mask()] = lambda ctx, t=ty: CmdRotate.execute(ctx, t, CmdRotate.Direction.RIGHT,
+                                                                                      extended=False)
+            storage.lut[0b00010100 | ty.mask()] = lambda ctx, t=ty: CmdRotate.execute(ctx, t, CmdRotate.Direction.LEFT,
+                                                                                      extended=False)
+            storage.lut[0b00011000 | ty.mask()] = lambda ctx, t=ty: CmdRotate.execute(ctx, t, CmdRotate.Direction.RIGHT,
+                                                                                      extended=True)
+            storage.lut[0b00011100 | ty.mask()] = lambda ctx, t=ty: CmdRotate.execute(ctx, t, CmdRotate.Direction.LEFT,
+                                                                                      extended=True)
 
     @classmethod
-    def execute(cls, ctx: ExecutionContext, ty: Number, direction: Direction):
-        c = ctx.pop(ty)
-        b = ctx.pop(ty)
-        a = ctx.pop(ty)
-        if direction == CmdRotate.Direction.RIGHT:
-            ctx.push(ty, c)
-            ctx.push(ty, a)
-            ctx.push(ty, b)
+    def execute(cls, ctx: ExecutionContext, ty: Number, direction: Direction, extended: bool):
+        if extended:
+            d = ctx.pop(ty)
+            c = ctx.pop(ty)
+            b = ctx.pop(ty)
+            a = ctx.pop(ty)
+            if direction == CmdRotate.Direction.RIGHT:
+                ctx.push(ty, d)
+                ctx.push(ty, a)
+                ctx.push(ty, b)
+                ctx.push(ty, c)
+            else:
+                ctx.push(ty, b)
+                ctx.push(ty, c)
+                ctx.push(ty, d)
+                ctx.push(ty, a)
         else:
-            ctx.push(ty, b)
-            ctx.push(ty, c)
-            ctx.push(ty, a)
+            c = ctx.pop(ty)
+            b = ctx.pop(ty)
+            a = ctx.pop(ty)
+            if direction == CmdRotate.Direction.RIGHT:
+                ctx.push(ty, c)
+                ctx.push(ty, a)
+                ctx.push(ty, b)
+            else:
+                ctx.push(ty, b)
+                ctx.push(ty, c)
+                ctx.push(ty, a)
 
-    def __init__(self, ty: Number, direction: Direction):
+    def __init__(self, ty: Number, direction: Direction, extended: bool):
         self.ty = ty
         self.direction = direction
+        self.extended = extended
 
     def compile(self, ctx: CompilationContext):
         left_mask = self.direction.mask() << 2
-        ctx.push(Number.BYTE, 0b00010000 | left_mask | self.ty.mask())
+        extended_mask = int(self.extended) << 3
+        ctx.push(Number.BYTE, 0b00010000 | extended_mask | left_mask | self.ty.mask())
 
 
 # 00100000
@@ -1181,5 +1207,3 @@ if __name__ == "__main__":
         print("Running VM")
         run(opcodes_storage, execution_context)
         print("Done")
-
-        execution_context.print_memory()

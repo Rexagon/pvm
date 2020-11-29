@@ -51,6 +51,8 @@ Flags
 - SWAP(t), (..., num a, num b) -> (..., num b, num a)
 - ROR(t), (..., num a, num b, num c) -> (..., num c, num a, num b)
 - ROL(t), (..., num a, num b, num c) -> (..., num b, num c, num a)
+- EROR(t), (..., num a, num b, num c, num d) -> (..., num d, num a, num b, num c)
+- EROL(t), (..., num a, num b, num c, num d) -> (..., num b, num c, num d, num a)
 
 - CALL, (..., addr x) -> (...), R=x, PC=PC+x
 - JMP, (..., addr x) -> (...), PC=PC+x
