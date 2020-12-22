@@ -502,6 +502,27 @@ class CmdRet(OpCode):
         ctx.push(Number.BYTE, 0b00100010)
 
 
+# 001001xx
+class CmdLoad(OpCode):
+    @classmethod
+    def register(cls, storage: OpCodeStorage):
+        for ty in number_types:
+            storage.insert('load' + ty.to_str(), lambda _, t=ty: CmdLoad(t))
+            storage.lut[0b00100100 | ty.mask()] = lambda ctx, t=ty: CmdLoad.execute(ctx, t)
+
+    @classmethod
+    def execute(cls, ctx: ExecutionContext, ty: Number):
+        rel = ctx.pop(ty)
+        value = ctx.peek(ty, rel)
+        ctx.push(ty, value)
+
+    def __init__(self, ty: Number):
+        self.ty = ty
+
+    def compile(self, ctx: CompilationContext):
+        ctx.push(Number.BYTE, 0b00100100 | self.ty.mask())
+
+
 # 00101ixx, i - invert
 class CmdBranch(OpCode):
     @classmethod

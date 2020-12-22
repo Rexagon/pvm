@@ -64,6 +64,7 @@ Flags
 
 - DUP(t), (..., num a) -> (..., num a, num a)
 - PEEK(t) rel, (..., s0 - rel: value, ...) -> (..., s0 - rel: value, ..., value), 1 <= rel <= 16
+- LOAD(t), (..., s0 - rel: value, ..., rel) -> (..., s0 - rel: value, ..., value)
 
 - CLRFLAGS, clear flags
 - ADD(?C)(t), (..., num a, num b) -> (..., num sum), sum = (a + b + ?C))
